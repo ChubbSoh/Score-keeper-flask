@@ -2,7 +2,7 @@ from flask import Flask, jsonify, Blueprint, request, render_template
 from score_keeping.users.models import User
 from score_keeping import db, app
 from sqlalchemy.exc import IntegrityError
-from .helpers.auth import generate_token, requires_auth, verify_token
+from score_keeping.helpers.auth import generate_token, requires_auth, verify_token
 
 
 users_api_blueprint = Blueprint('users_api',
@@ -18,9 +18,9 @@ def create_user():
     
     try:
         user = User(
-            name=post_data["name"],
-            email=post_data["email"], 
-            password=post_data["password"]
+            name=post_data['user']["name"],
+            email=post_data['user']["email"], 
+            password=post_data['user']["password"]
         )
 
         db.session.add(user)
@@ -31,7 +31,7 @@ def create_user():
     except IntegrityError:
         return jsonify(message="User with that email already exists"), 409
 
-    new_user = User.query.filter_by(email=post_data["email"]).first()
+    new_user = User.query.filter_by(email=post_data['user']["email"]).first()
 
     return jsonify(
         id=user.id,
@@ -41,7 +41,7 @@ def create_user():
 @users_api_blueprint.route('/login', methods = ['GET'])
 def login():
     post_data = request.get_json()
-    user = User.get_with_email_and_password(post_data["email"], post_data["password"])
+    user = User.get_with_email_and_password(post_data['user']["email"], post_data["password"])
     if user:
         return jsonify(token=generate_token(user))
     else:

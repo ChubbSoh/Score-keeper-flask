@@ -2,14 +2,16 @@ import os
 from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
+from flask_cors import CORS, cross_origin
 import config 
 
 
 
 
+
 app = Flask(__name__)
-bcrypt = Bcrypt(app)
+cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+
 
 app.config.from_object(os.environ['APP_SETTINGS'])
 
@@ -17,6 +19,7 @@ app.config.from_object(os.environ['APP_SETTINGS'])
 db = SQLAlchemy(app)
 
 Migrate(app, db)
+
 ## API Routes ##
 
 
