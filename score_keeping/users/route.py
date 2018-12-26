@@ -1,8 +1,10 @@
 from flask import Flask, jsonify, Blueprint, request, render_template
 from score_keeping.users.models import User
+from score_keeping.game.models import Game
 from score_keeping import db, app
 from sqlalchemy.exc import IntegrityError
 from score_keeping.helpers.auth import generate_token, requires_auth, verify_token
+
 
 
 users_api_blueprint = Blueprint('users_api',
@@ -38,15 +40,68 @@ def create_user():
         token=generate_token(new_user)
         )
 
-@users_api_blueprint.route('/login', methods = ['GET'])
+@users_api_blueprint.route('/login', methods = ['POST'])
 def login():
     post_data = request.get_json()
-    user = User.get_with_email_and_password(post_data['user']["email"], post_data["password"])
-    if user:
+    user = User.query.filter_by(email=post_data['user']["email"]).first()
+    
+    if user and user.check_password(str(post_data['user']["password"])):
         return jsonify(token=generate_token(user))
     else:
         return jsonify(error=True), 403
 
+@users_api_blueprint.route("/api/is_token_valid", methods=["POST"])
+def is_token_valid():
+    incoming = request.get_json()
+    is_valid = verify_token(incoming["token"])
+
+    if is_valid:
+        return jsonify(token_is_valid=True)
+    else:
+        return jsonify(token_is_valid=False), 403
+
+@users_api_blueprint.route('/newgame', methods = ['POST'])
+def create_game():
+    post_data = request.get_json()
+    
+    game = Game(
+        gameName=post_data['game']["gameName"],
+        scorePerPoint=post_data['game']["scorePerPoint"],
+        timerChecked=post_data['game']["timerChecked"], 
+        timerMinPerRound=post_data['game']["timerMinPerRound"],  
+        timerMinPerGame=post_data['game']["timerMinPerGame"]
+    )
+    db.session.add(game)
+    db.session.commit()
+
+    return jsonify(
+        id=game.id,
+
+        )
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # post_data = request.get_json()
+    # user = User.get_with_email_and_password(post_data['user']["email"], post_data["password"])
+    # if user:
+    #     return jsonify(token=generate_token(user))
+    # else:
+    #     return jsonify(error=True), 403
 
 
 

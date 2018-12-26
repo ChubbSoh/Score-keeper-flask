@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS, cross_origin
+from flask_login import LoginManager, current_user
 import config 
 
 
@@ -19,6 +20,8 @@ app.config.from_object(os.environ['APP_SETTINGS'])
 db = SQLAlchemy(app)
 
 Migrate(app, db)
+login_manager = LoginManager()
+login_manager.init_app(app)
 
 ## API Routes ##
 
