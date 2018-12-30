@@ -7,7 +7,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.ext.hybrid import hybrid_property
 from score_keeping.helpers.utils import validation_preparation
 from flask_login import UserMixin
-# import jwt
+import jwt
+from score_keeping.helpers.auth import generate_token, requires_auth, verify_token
 
 
 class User(db.Model,UserMixin):
@@ -44,4 +45,25 @@ class User(db.Model,UserMixin):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
 
+        
+    
+    @staticmethod
+    def decode_auth_token(auth_token):
+        """
+        Validates the auth token
+        :param auth_token:
+        :return: integer|string
+        """
+        try:
+            payload = jwt.decode(auth_token, app.config.get('SECRET_KEY'))
+            # is_blacklisted_token = BlacklistToken.check_blacklist(auth_token)
+            # if is_blacklisted_token:
+            #     return 'Token blacklisted. Please log in again.'
+            # else:
+            return payload
+        except jwt.ExpiredSignatureError:
+            return 'Signature expired. Please log in again.'
+        except jwt.InvalidTokenError:
+            return 'Invalid token. Please log in again.' 

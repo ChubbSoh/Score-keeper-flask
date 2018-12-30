@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, Blueprint, request, render_template
 from score_keeping.users.models import User
-from score_keeping.game.models import Game
+from score_keeping.game.models import Game, GameLog
 from score_keeping import db, app
 from sqlalchemy.exc import IntegrityError
 from score_keeping.helpers.auth import generate_token, requires_auth, verify_token
@@ -40,6 +40,24 @@ def create_user():
         token=generate_token(new_user)
         )
 
+@users_api_blueprint.route('/gamelog', methods = ['POST'])
+def game_log():
+    
+    post_data = request.get_json()
+    
+    
+    gamelog = GameLog(
+        scores=post_data['gamelog']["scores"],
+ 
+    )
+    db.session.add(gamelog)
+    db.session.commit()
+
+    return jsonify(
+        message="Game log added"
+    )
+
+
 @users_api_blueprint.route('/login', methods = ['POST'])
 def login():
     post_data = request.get_json()
@@ -64,20 +82,47 @@ def is_token_valid():
 def create_game():
     post_data = request.get_json()
     
-    game = Game(
+    jwt = request.headers.get('Authorization')
+    
+
+    if jwt:
+        auth_token = jwt
+        # .split(" ")[1]
+    else:
+        responseObject = {
+            'status': 'failed',
+            'message': 'No authorization header found'
+        }
+
+        return jsonify(responseObject), 401
+
+    # import pdb; pdb.set_trace()
+    # This part is very buggy. i try to sperate the dictionary, it only works sometimes
+    user_id = User.decode_auth_token(auth_token)
+    first_val = list(user_id.values())[1]
+    user = User.query.get(first_val)    
+
+    if user:
+        game = Game(
         gameName=post_data['game']["gameName"],
+        user_id=user,
         scorePerPoint=post_data['game']["scorePerPoint"],
         timerChecked=post_data['game']["timerChecked"], 
         timerMinPerRound=post_data['game']["timerMinPerRound"],  
         timerMinPerGame=post_data['game']["timerMinPerGame"]
     )
-    db.session.add(game)
-    db.session.commit()
+        db.session.add(game)
+        db.session.commit()
 
-    return jsonify(
-        id=game.id,
+        return jsonify(
+            id=game.id,
+            )
+    else:
+        responseObject = {
+            'status': 'failed',
+            'message': 'Authentication failed'
+        }
 
-        )
     
 
 
